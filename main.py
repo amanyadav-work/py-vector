@@ -4,6 +4,7 @@ import faiss
 import numpy as np
 import pandas as pd
 from fastapi.middleware.cors import CORSMiddleware
+import os  # Import os to access environment variables
 
 app = FastAPI()
 
@@ -15,7 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
+# Load the CSV data
 df = pd.read_csv("jobs_big.csv")
 texts = (df["title"] + " " + df["description"]).tolist()
 
@@ -33,9 +34,8 @@ index.add(vectors)
 def get_jobs():
     return { "message" : "Hello from search service" }
 
-
 @app.get("/getjobs")
-def get_jobs( query: str | None = Query(None), location: str | None = None, company: str | None = None, top_k: int = Query(20, le=50)):
+def get_jobs(query: str | None = Query(None), location: str | None = None, company: str | None = None, top_k: int = Query(20, le=50)):
 
     if not query:
         # Return first top_k jobs if query is missing
@@ -87,3 +87,9 @@ def get_jobs( query: str | None = Query(None), location: str | None = None, comp
         "count": len(results),
         "results": results
     }
+
+if __name__ == "__main__":
+    import uvicorn
+    # Use the PORT environment variable for the port
+    port = int(os.environ.get("PORT", 8000))  # Default to 8000 if PORT isn't set
+    uvicorn.run(app, host="0.0.0.0", port=port)
